@@ -1,0 +1,17 @@
+import Hello from './hello';
+import LikeButton from './interactive_components';
+import Counter from './counter.js';
+import {FilterableProductTable, products} from './thinking_in_react.js';
+import Avatar from './multiple_components.js';
+
+import {RefsExample, FormsExample, KeysExample, FancyCheckbox} from './misc_examples.js';
+import {PopChart} from './chartexm.js';
+
+import React from 'react';
+import { render } from 'react-dom';
+
+
+//render(<KeysExample results={[ {id : 1, text : 'helloububg'}, {id : 2, text : 'world'}, {id: 3, text : 'universe'}]} />,
+//     document.getElementById("root"));
+
+render(<PopChart/>,document.getElementById("root"));

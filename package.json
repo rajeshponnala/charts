@@ -1,0 +1,27 @@
+{
+  "name": "react-examples",
+  "version": "1.0.0",
+  "description": "react and redux examples",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "budo src/index.js:build/index.js --live -- -t babelify"
+  },
+  "author": "Pervez Iqbal",
+  "license": "ISC",
+  "devDependencies": {
+    "babelify": "^6.3.0",
+    "watchify": "^3.4.0",
+    "react": "^0.14.0",
+    "react-dom": "^0.14.0"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
+  },
+  "dependencies": {
+    "chart.js": "^1.0.2",
+    "react-chartjs": "^0.6.0",
+    "underscore": "^1.8.3"
+  }
+}
