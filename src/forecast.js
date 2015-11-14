@@ -20,7 +20,11 @@ function y (x,data) {
     var xbar = mean(data,"year");
     var ybar = mean(data,"y");
     var bop = b(xbar,ybar,data);
-    return (a(xbar,ybar,bop)+ (bop*x)).toFixed(2);
+    return parseInt(a(xbar,ybar,bop)+ (bop*x));
+}
+
+function y1 (a,b,x) {
+    return parseInt(a+(b*x));
 }
 
 
@@ -56,10 +60,8 @@ function getY(year,data) {
     return y(year,data);
 }
 
-function getData(year,data){
-    var data15 = getY(6,data);
-    var trenddata = [getY(1,data),getY(2,data),getY(3,data),getY(4,data),getY(5,data),data15];
-    return { labels: ["2010","2011","2012", "2013", "2014", "2015"],
+function getData(labeldata,dataarray){
+    return { labels: labeldata,
              datasets:[
                  {
                      label: "original",
@@ -69,23 +71,14 @@ function getData(year,data){
                      pointStrokeColor: "#fff",
                      pointHighlightFill: "#fff",
                      pointHighlightStroke: "rgba(220,220,220,1)",
-                     data: _.reduce(data,function(acc,d) { acc.push(d.y); return acc; },[])
-                 },
-
-                 {
-                     label: "expected",
-                     fillColor: "rgba(151,187,205,0.2)",
-                     strokeColor: "rgba(151,187,205,1)",
-                     pointColor: "rgba(151,187,205,1)",
-                     pointStrokeColor: "#fff",
-                     pointHighlightFill: "#fff",
-                     pointHighlightStroke: "rgba(151,187,205,1)",
-                     data: trenddata
+                     data: dataarray
                  }
+
+
              ]};
 }
 
-var options = { bezierCurve: true,datasetFill:false,pointDot:false};
+var options = { bezierCurve: false,datasetFill:false,pointDot:false};
 
 export class LineChart extends Component {
     constructor(props) {
@@ -93,71 +86,147 @@ export class LineChart extends Component {
         this.state = {data: props.data,tdata:[]};
     }
     componentDidMount() {
-         var fvalues = getFilterValues();
-         this.setState({data: getData(6,sampleData()[fvalues.gen][fvalues.type])});
-        $.ajax({
-            url: "http://localhost:8091/lfpr",
-            dataType: 'json',
-            cache: false,
-            success: function (data) {
-                var dt = data.filter(function (i) {
-                    return i.type === "UPS";
-                });
-             var data = getPredictedData(dt,2016);
-             this.setState({tdata:data});
-            }.bind(this),
-            error: function (xhr, status, err) {
-                console.log(xhr);
-                console.error(this.props.url, status, err.toString());
-            }.bind(this)
-        });
+
     }
-    handleClick() {
+    handleDataType(){
         var fvalues = getFilterValues();
-        //this.setState({data: getData(6,sampleData()[fvalues.gen][fvalues.type])});
-        $.ajax({
-            url: "http://localhost:8091/"+getChartType(fvalues.type),
-            dataType: 'json',
-            cache: false,
-            success: function (data) {
-                var dt = data.filter(function (i) {
-                    return i.type === "UPS";
-                });
-                var data = getPredictedData(dt,2016);
-                this.setState({tdata:data});
-            }.bind(this),
-            error: function (xhr, status, err) {
-                console.log(xhr);
-                console.error(this.props.url, status, err.toString());
-            }.bind(this)
-        });
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
+    }
+    handleTypes() {
+        var fvalues = getFilterValues();
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
     }
     onChange(){
         var fvalues = getFilterValues();
-        //this.setState({data: getData(6,sampleData()[fvalues.gen][fvalues.type])});
-        $.ajax({
-            url: "http://localhost:8091/"+getChartType(fvalues.type),
-            dataType: 'json',
-            cache: false,
-            success: function (data) {
-                var dt = data.filter(function (i) {
-                    return i.type === "UPS";
-                });
-                var data = getPredictedData(dt,fvalues.year);
-                this.setState({tdata:data});
-            }.bind(this),
-            error: function (xhr, status, err) {
-                console.log(xhr);
-                console.error(this.props.url, status, err.toString());
-            }.bind(this)
-        });
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
     }
-
+    casteHandle(){
+        var fvalues = getFilterValues();
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
+    }
+    genderHandle(){
+        var fvalues = getFilterValues();
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
+    }
+    geoHandle(){
+        var fvalues = getFilterValues();
+        if(fvalues.year > 0) {
+            $.ajax({
+                url: "http://localhost:8091/"+getChartType(fvalues.type),
+                dataType: 'json',
+                cache: false,
+                success: function (data) {
+                    var dt = data.filter(function (i) {
+                        return i.type === fvalues.datatype;
+                    });
+                    var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
+                    var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
+                    this.setState({tdata:newdata[0],data:newdata[1]});
+                }.bind(this),
+                error: function (xhr, status, err) {
+                    console.log(xhr);
+                    console.error(this.props.url, status, err.toString());
+                }.bind(this)
+            });
+        }
+    }
     render() {
         return (<div>
-             <Filter handleClick={this.handleClick.bind(this)} data={this.state.data}></Filter>
+             <Filter handleDataType={this.handleDataType.bind(this)} handleTypes={this.handleTypes.bind(this)}
+                     data={this.state.data} tdata={this.state.tdata} casteHandle={this.casteHandle.bind(this)}
+                     genderHandle={this.genderHandle.bind(this)} geoHandle={this.geoHandle.bind(this)}></Filter>
              <br/>
-            <ComboBox dates={yearsData(2012,2030)} onChange={this.onChange.bind(this)} tabledata={this.state.tabledata}></ComboBox>
+            <ComboBox dates={yearsData(2012,2030)} onChange={this.onChange.bind(this)} tdata={this.state.tabledata}></ComboBox>
             <br/>
             <Line id="chart" data={this.state.data} options={options}  width="600" height="250" redraw></Line>
             <div id="legend"></div>
@@ -172,17 +241,34 @@ export class Filter extends Component {
         return (
             <div>
                 <div>
-                    <input id="Males" type="radio" name="gen">Male</input>
-                    <input id="Females" type="radio" name="gen">Female</input>
-                    <input id="Persons" type="radio" name="gen" defaultChecked="true">Persons</input>
+                    <input id="male" type="radio" onClick={this.props.genderHandle.bind(this)}  name="gen"/>Male
+                    <input id="female" type="radio" onClick={this.props.genderHandle.bind(this)} name="gen"/>Female
+                    <input id="person" type="radio" name="gen" onClick={this.props.genderHandle.bind(this)} defaultChecked="true"/>Persons
                 </div>
                 <br/>
-                <div><input id="labour-rate" type="radio" name="charttype" defaultChecked="true">Labour Rate</input>
-                    <input id="worker-population" type="radio" name="charttype">Worker Population</input>
-                    <input id="unemployment-rate" type="radio" name="charttype">Un-Employment Rate</input>
-                    <input id="proportion-unemployment" type="radio" name="charttype">proportion UnEmployment</input></div>
+                <div>
+                    <input id="SC" type="radio" onClick={this.props.casteHandle.bind(this)} name="cat"/>SC
+                    <input id="ST" type="radio" onClick={this.props.casteHandle.bind(this)} name="cat"/>ST
+                    <input id="OBC" type="radio" onClick={this.props.casteHandle.bind(this)} name="cat"/>OBC
+                    <input id="OTHERS" type="radio" onClick={this.props.casteHandle.bind(this)} name="cat" defaultChecked="true"/>OTHERS
+                </div>
                 <br/>
-                <input type="button" onClick={this.props.handleClick.bind(this)} value="Create Chart"/>
+                <div>
+                    <input id="rural" type="radio" onClick={this.props.geoHandle.bind(this)} defaultChecked="true" name="geo"/>Rural
+                    <input id="urban" type="radio" onClick={this.props.geoHandle.bind(this)} name="geo"/>Urban
+                    <input id="rural_urban" type="radio" onClick={this.props.geoHandle.bind(this)} name="geo"/>Rural+Urban
+                </div>
+                <br/>
+                <div><input id="labour-rate" type="radio" onClick={this.props.handleTypes.bind(this)} name="charttype" defaultChecked="true"/>Labour Rate
+                    <input id="worker-population" type="radio" onClick={this.props.handleTypes.bind(this)} name="charttype"/>Worker Population
+                    <input id="unemployment-rate" type="radio" onClick={this.props.handleTypes.bind(this)} name="charttype"/>Un-Employment Rate
+                    <input id="proportion-unemployment" type="radio" onClick={this.props.handleTypes.bind(this)} name="charttype"/>proportion UnEmployment</div>
+                <br/>
+                <div><input id="UPS" type="radio" onClick={this.props.handleDataType.bind(this)} name="datatype" defaultChecked="true"/>UPS
+                    <input id="UPSS" type="radio" onClick={this.props.handleDataType.bind(this)} name="datatype"/>UPSS
+                    </div>
+                <br/>
+
             </div>);
     }
 }
@@ -190,7 +276,7 @@ export class Filter extends Component {
 export class ComboBox extends Component{
     render(){
         var optionsarray = this.props.dates.map(function(d){
-            return <option value={d.val}>{d.lbl}</option>
+            return <option key={d.val} value={d.val}>{d.lbl}</option>
         });
         return (<select id="dates" onChange={this.props.onChange.bind(this)}>{optionsarray}</select>);
     }
@@ -202,6 +288,9 @@ function getFilterValues() {
     return {
         gen: [Gen.id],
         type: Types.id,
+        cat: $('input[name=cat]:checked')[0].id,
+        geo:$('input[name=geo]:checked')[0].id,
+        datatype: $('input[name=datatype]:checked')[0].id,
         year: $('#dates').val()
     };
 }
@@ -223,7 +312,7 @@ function getPredictedData(sampledata,year){
         "rural_urban_male","rural_urban_female","rural_urban_person"];
     var predictedData = [];
     _.each(types,function(obj){
-        var transobj = {"type":obj,"year":year};
+        var transobj = {"caste":obj,"year":year};
         var dat = _.filter(sampledata,function(d) { return d.caste === obj});
         _.each(props,function(k) {
             var preData = getPreviousData(obj,k,dat);
@@ -233,6 +322,7 @@ function getPredictedData(sampledata,year){
       });
     return predictedData;
 }
+
 
 export class DataTable extends Component {
     render(){
@@ -269,7 +359,7 @@ export class Row extends Component {
     render(){
         var d = this.props.data;
         return (<tr>
-            <td>{d.type}</td>
+            <td>{d.caste}</td>
             <td><p className="dataCell">{d.rural_male}</p></td>
             <td><p className="dataCell">{d.rural_female}</p></td>
             <td><p className="dataCell">{d.rural_person}</p></td>
@@ -298,3 +388,46 @@ function getChartType(chartType) {
              return "pur";
     }
 }
+
+function genYears(selyear,min) {
+    var years = [];
+     for(var i = min;i<selyear;i++)
+        years.push(i);
+    return years;
+}
+
+function getMinDateAndMaxDateInGivenData(data){
+        return [_.min(data),_.max(data)];
+}
+
+function getPresentData(data,fvalues) {
+     var cData = _.filter(data,function(d) { return d.year <= fvalues.year && d.caste == fvalues.cat;});
+     var sortedData = (fvalues.datatype == "UPSS")? cData : cData.sort(function(a){ return a.year;});
+     var labels = [];
+     var axisData = [];
+     _.each(sortedData,function(c){
+         labels.push(c.year.toString());
+         axisData.push(c[fvalues.geo+"_"+fvalues.gen]);
+     });
+    return [_.filter(data,function(d) { return d.year == fvalues.year}),getData(labels,axisData)];
+}
+
+function PredictData(data,fvalues) {
+    var predictData = getPredictedData(data,fvalues.year);
+    var eDataYears = getMinDateAndMaxDateInGivenData(_.map(data,function(d){return d.year}));
+     var filteredData = _.filter(data,function(d){ return d.caste == fvalues.cat});
+    var fdata =  (fvalues.datatype == "UPSS")?_.map(filteredData,function(x) { return {"year":x.year,"y":x[fvalues.geo+'_'+fvalues.gen]};})
+        : _.map(filteredData.sort(function (i) { return i.year;}),function(x) { return {"year":x.year,"y":x[fvalues.geo+'_'+fvalues.gen]};});
+    var xmean = mean(fdata,"year");
+    var ymean = mean(fdata,"y");
+    var b1 = b(xmean,ymean,fdata);
+    var a1 = a(xmean,ymean,b1);
+    var labels = _.map(fdata,function(d){ return d.year.toString()});
+    var axisdata = _.map(fdata,function(d){ return d.y});
+    for(var i = eDataYears[1]+1;i<=fvalues.year;i++) {
+        labels.push(i.toString());
+        axisdata.push(y1(a1,b1,i));
+    }
+    return [predictData,getData(labels,axisdata)];
+}
+
