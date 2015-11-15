@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import {Line} from 'react-chartjs';
+import {Line,Bar} from 'react-chartjs';
 import _ from 'underscore';
 
 
@@ -83,7 +83,7 @@ var options = { bezierCurve: false,datasetFill:false,pointDot:false};
 export class LineChart extends Component {
     constructor(props) {
         super(props);
-        this.state = {data: props.data,tdata:[]};
+        this.state = {data: props.data,tdata:[],bdata:props.bdata};
     }
     componentDidMount() {
 
@@ -101,7 +101,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -123,7 +123,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -145,7 +145,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -167,7 +167,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -189,7 +189,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -211,7 +211,7 @@ export class LineChart extends Component {
                     });
                     var maxminDates = getMinDateAndMaxDateInGivenData(_.map(dt,function(d){return d.year}));
                     var newdata = (fvalues.year >= maxminDates[0] && fvalues.year <= maxminDates[1])? getPresentData(dt,fvalues):PredictData(dt,fvalues);
-                    this.setState({tdata:newdata[0],data:newdata[1]});
+                    this.setState({tdata:newdata[0],data:newdata[1],bdata:barChartData(newdata[0])});
                 }.bind(this),
                 error: function (xhr, status, err) {
                     console.log(xhr);
@@ -229,6 +229,7 @@ export class LineChart extends Component {
             <ComboBox dates={yearsData(2012,2030)} onChange={this.onChange.bind(this)} tdata={this.state.tabledata}></ComboBox>
             <br/>
             <Line id="chart" data={this.state.data} options={options}  width="600" height="250" redraw></Line>
+            <Bar id="bchart" data={this.state.bdata} options={options}  width="600" height="250" redraw></Bar>
             <div id="legend"></div>
             <br/>
             <DataTable tabledata={this.state.tdata}></DataTable>
@@ -316,7 +317,8 @@ function getPredictedData(sampledata,year){
         var dat = _.filter(sampledata,function(d) { return d.caste === obj});
         _.each(props,function(k) {
             var preData = getPreviousData(obj,k,dat);
-            transobj[k] = getY(year,preData);
+            var yval = getY(year,preData);
+            transobj[k] = (yval< 0)?0:yval;
           });
         predictedData.push(transobj);
       });
@@ -426,8 +428,61 @@ function PredictData(data,fvalues) {
     var axisdata = _.map(fdata,function(d){ return d.y});
     for(var i = eDataYears[1]+1;i<=fvalues.year;i++) {
         labels.push(i.toString());
-        axisdata.push(y1(a1,b1,i));
+        var yval = y1(a1,b1,i);
+        axisdata.push((yval<0)?0:yval);
     }
     return [predictData,getData(labels,axisdata)];
+}
+
+function barChartData(data) {
+    var datasets = [];
+    var bsettings = barSettings();
+    var labels = ["rural","urban","rural_urban"];
+    var casts =  ["SC","ST","OBC","OTHERS"];
+    var gen = ["male","female","person"]
+    _.each(casts,function(c){
+        var catobj = _.find(data, function (x) { return x.caste == c; });
+        _.each(gen,function(g){
+            var data = [];
+            _.each(labels,function(l){
+                data.push(catobj[l+"_"+g]);
+             });
+            datasets.push(createDataObj(bsettings[c+'-'+g],data));
+        });
+    });
+     console.log(datasets);
+    return {
+        labels: labels,
+        datasets: datasets
+    };
+}
+
+function createDataObj(csettings, data) {
+    console.log(csettings)
+    return {
+        label: csettings[0],
+        fillColor: csettings[1],
+        strokeColor: csettings[2],
+        highlightFill: csettings[3],
+        highlightStroke: csettings[4],
+        data: data
+    }
+}
+
+function barSettings() {
+    return {
+        "SC-person": ["SC-Person", "rgba(220,220,220,0.5)", "rgba(220,220,220,0.8)", "rgba(220,220,220,0.75)", "rgba(220,220,220,1)"],
+        "ST-person": ["ST-Person", "rgba(151,187,205,0.5)", "rgba(151,187,205,0.8)", "rgba(151,187,205,0.75)", "rgba(151,187,205,1)"],
+        "OBC-person": ["OBC-Person", "rgba(128,0,0,0.5)", "rgba(128,0,0,0.8)", "rgba(128,0,0,0.75)", "rgba(128,0,0,1)"],
+        "OTHERS-person": ["OTHERS-Person", "rgba(0,128,128,0.5)", "rgba(0,128,128,0.8)", "rgba(0,128,128,0.75)", "rgba(0,128,128,1)"],
+        "SC-male":["SC-Male", "rgba(204,229,255,0.5)", "rgba(204,229,255,0.8)", "rgba(204,229,255,0.75)", "rgba(204,229,255,1)"],
+        "SC-female":["SC-Female","rgba(204,204,255,0.5)", "rgba(204,204,255,0.8)", "rgba(204,204,255,0.75)", "rgba(204,204,255,1)"],
+        "ST-male":["ST-Male","rgba(204,229,255,0.5)", "rgba(204,229,255,0.8)", "rgba(204,229,255,0.75)", "rgba(204,229,255,1)"],
+        "ST-female":["ST-Female","rgba(255,204,255,0.5)", "rgba(255,204,255,0.8)", "rgba(255,204,255,0.75)", "rgba(255,204,255,1)"],
+        "OBC-male":["OBC-Male","rgba(102,178,255,0.5)", "rgba(102,178,255,0.8)", "rgba(102,178,255,0.75)", "rgba(102,178,255,1)"],
+        "OBC-female":["OBC-Female","rgba(51,153,255,0.5)", "rgba(51,153,255,0.8)", "rgba(51,153,255,0.75)", "rgba(51,153,255,1)"],
+        "OTHERS-male":["Others-Male","rgba(255,102,255,0.5)", "rgba(255,102,255,0.8)", "rgba(255,102,255,0.75)", "rgba(255,102,255,1)"],
+        "OTHERS-female":["Others-Female","rgba(255,51,255,0.5)", "rgba(255,51,255,0.8)", "rgba(255,51,255,0.75)", "rgba(255,51,255,1)"]
+    };
 }
 
