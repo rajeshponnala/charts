@@ -28,33 +28,6 @@ function y1 (a,b,x) {
 }
 
 
-function sampleData(){
-    var data = {
-        "Persons":{"labour-rate": [{"year":1,"y":35.9},{"year":3,"y":54.15},{"year":4,"y" :51.65},{"year":5,"y":54.05}],
-                   "worker-population":[{"year":1,"y":46.5},{"year":3,"y":52.2},{"year":4,"y" :49.3},{"year":5,"y":51.8}],
-                   "unemployment-rate":[{"year":1,"y":9.4},{"year":3,"y":3.55},{"year":4,"y" :4.6},{"year":5,"y":4.5}],
-                   "proportion-unemployment":[{"year":1,"y":3.4},{"year":3,"y":1.9},{"year":4,"y" :2.35},{"year":5,"y":2.25}]
-                  },
-        "Females":{"labour-rate": [{"year":1,"y":35.9},{"year":3,"y":54.4},{"year":4,"y" :53.1},{"year":5,"y":55.6}],
-                   "worker-population":[{"year":1,"y":46.5},{"year":3,"y":53.6},{"year":4,"y" :51.0},{"year":5,"y":53.7}],
-                   "unemployment-rate":[{"year":1,"y":9.4},{"year":3,"y":3.3},{"year":4,"y" :4},{"year":5,"y":3.4}],
-                   "proportion-unemployment":[{"year":1,"y":3.4},{"year":3,"y":1.8},{"year":4,"y" :2.1},{"year":5,"y":1.9}]
-                   },
-        "Males":{"labour-rate": [{"year":1,"y":35.9},{"year":3,"y":52.9},{"year":4,"y" :50.2},{"year":5,"y":52.5}],
-                 "worker-population":[{"year":1,"y":46.5},{"year":3,"y":50.8},{"year":4,"y" :47.6},{"year":5,"y":49.9}],
-                  "unemployment-rate":[{"year":1,"y":9.4},{"year":3,"y":3.8},{"year":4,"y" :5.2},{"year":5,"y":4.9}],
-                 "proportion-unemployment":[{"year":1,"y":3.4},{"year":3,"y":2.0},{"year":4,"y" :2.6},{"year":5,"y":2.6}]
-                }
-        };
-    return data;
-}
-
-
-function labour_rate_persons_data(){
-
-    return [{"year":1,"y":9.4},{"year":3,"y":3.55},{"year":4,"y":4.6},{"year":5,"y":4.15}];
-
-}
 
 function getY(year,data) {
     return y(year,data);
@@ -79,6 +52,21 @@ function getData(labeldata,dataarray){
 }
 
 var options = { bezierCurve: false,datasetFill:false,pointDot:false};
+var barOptions = {inGraphDataShow:true,showTooltips:false,
+    onAnimationComplete:function(){
+        alert('hello');
+        var ctx = this.chart.ctx;
+        ctx.font = this.scale.font;
+        ctx.fillStyle = this.scale.textColor
+        ctx.textAlign = "center";
+        ctx.textBaseline = "bottom";
+
+        this.datasets.forEach(function (dataset) {
+            dataset.bars.forEach(function (bar) {
+                ctx.fillText(bar.value, bar.x, bar.y - 5);
+            });
+        })
+    }};
 
 export class LineChart extends Component {
     constructor(props) {
@@ -220,6 +208,7 @@ export class LineChart extends Component {
             });
         }
     }
+
     render() {
         return (<div>
              <Filter handleDataType={this.handleDataType.bind(this)} handleTypes={this.handleTypes.bind(this)}
@@ -229,7 +218,7 @@ export class LineChart extends Component {
             <ComboBox dates={yearsData(2012,2030)} onChange={this.onChange.bind(this)} tdata={this.state.tabledata}></ComboBox>
             <br/>
             <Line id="chart" data={this.state.data} options={options}  width="600" height="250" redraw></Line>
-            <Bar id="bchart" data={this.state.bdata} options={options}  width="600" height="250" redraw></Bar>
+            <Bar id="bchart" data={this.state.bdata} options={barOptions}   width="600" height="250" redraw></Bar>
             <div id="legend"></div>
             <br/>
             <DataTable tabledata={this.state.tdata}></DataTable>
@@ -450,7 +439,6 @@ function barChartData(data) {
             datasets.push(createDataObj(bsettings[c+'-'+g],data));
         });
     });
-     console.log(datasets);
     return {
         labels: labels,
         datasets: datasets
@@ -458,7 +446,6 @@ function barChartData(data) {
 }
 
 function createDataObj(csettings, data) {
-    console.log(csettings)
     return {
         label: csettings[0],
         fillColor: csettings[1],
