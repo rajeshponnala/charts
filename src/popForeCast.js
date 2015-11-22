@@ -47,7 +47,7 @@ var barOptions = {inGraphDataShow:true,showTooltips:false,
 export class PopulationChart extends Component {
     constructor(props) {
         super(props);
-        this.state = {data: props.data,tdata:[],bdata:props.bdata};
+        this.state = {data: props.data,tdata:[],bdata:props.bdata,knobvalue:0};
     }
     componentDidMount() {
         $('#dates').val(2012);
@@ -70,14 +70,13 @@ export class PopulationChart extends Component {
                      ump.paramType = "Unemployed Persons";
                      arr.push(ump);
                      opData = getPresentData(arr,data.decade,fvalues.year,data[this.props.paramType].filter(function(l) { return l.type == "UPS" && l.year <= fvalues.year;}),fvalues);
-                     console.log(opData[0]);
-                     this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr)});
+                     this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr),knobvalue:opData[1].datasets[0].data[opData[1].datasets[0].data.length-1]});
                  }
                 else {
                      var years = genYears(fvalues.year,minandmaxdatadates[0]);
                      years.push(parseInt(fvalues.year));
                      var preData  = predictedData(years,data,fvalues,this.props.paramType,minandmaxdatadates)
-                     this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0])});
+                     this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0]),knobvalue:preData[1].datasets[0].data[preData[1].datasets[0].data.length-1]});
                  }
 
             }.bind(this),
@@ -144,14 +143,13 @@ export class PopulationChart extends Component {
                     ump.paramType = "Unemployed Persons";
                     arr.push(ump);
                     opData = getPresentData(arr,data.decade,fvalues.year,data[this.props.paramType].filter(function(l) { return l.type == "UPS" && l.year <= fvalues.year;}),fvalues);
-                    console.log(opData[0]);
-                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr)});
+                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr),knobvalue:opData[1].datasets[0].data[opData[1].datasets[0].data.length-1]});
                 }
                 else {
                     var years = genYears(fvalues.year,minandmaxdatadates[0]);
                     years.push(parseInt(fvalues.year));
                     var preData  = predictedData(years,data,fvalues,this.props.paramType,minandmaxdatadates)
-                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0])});
+                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0]),knobvalue:preData[1].datasets[0].data[preData[1].datasets[0].data.length-1]});
                 }
 
             }.bind(this),
@@ -181,14 +179,13 @@ export class PopulationChart extends Component {
                     ump.paramType = "Unemployed Persons";
                     arr.push(ump);
                     opData = getPresentData(arr,data.decade,fvalues.year,data[this.props.paramType].filter(function(l) { return l.type == "UPS" && l.year <= fvalues.year;}),fvalues);
-                    console.log(opData[0]);
-                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr)});
+                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr),knobvalue:opData[1].datasets[0].data[opData[1].datasets[0].data.length-1]});
                 }
                 else {
                     var years = genYears(fvalues.year,minandmaxdatadates[0]);
                     years.push(parseInt(fvalues.year));
                     var preData  = predictedData(years,data,fvalues,this.props.paramType,minandmaxdatadates)
-                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0])});
+                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0]),knobvalue:preData[1].datasets[0].data[preData[1].datasets[0].data.length-1]});
                 }
 
             }.bind(this),
@@ -219,13 +216,13 @@ export class PopulationChart extends Component {
                     arr.push(ump);
                     opData = getPresentData(arr,data.decade,fvalues.year,data[this.props.paramType].filter(function(l) { return l.type == "UPS" && l.year <= fvalues.year;}),fvalues);
                     console.log(opData[0]);
-                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr)});
+                    this.setState({tdata:opData[0],data:opData[1],bdata:barChartData(arr),knobvalue:opData[1].datasets[0].data[opData[1].datasets[0].data.length-1]});
                 }
                 else {
                     var years = genYears(fvalues.year,minandmaxdatadates[0]);
                     years.push(parseInt(fvalues.year));
                     var preData  = predictedData(years,data,fvalues,this.props.paramType,minandmaxdatadates)
-                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0])});
+                    this.setState({tdata:preData[0],data:preData[1],bdata:barChartData(preData[0]),knobvalue:preData[1].datasets[0].data[preData[1].datasets[0].data.length-1]});
                 }
 
             }.bind(this),
@@ -529,6 +526,12 @@ function setPersonsAndTotalValues(obj){
     obj["rural_urban_person"] = obj["urban_person"] +  obj["rural_person"];
     obj["rural_urban_male"] = obj["urban_male"] +  obj["rural_male"];
     obj["rural_urban_female"] = obj["urban_female"] +  obj["rural_female"];
+}
+
+function getTypeOfParam(v) {
+    if("lpf") return "Labour Force";
+    if("wp") return "Workers";
+    if("ump") return "Unemployed Persons";
 }
 
 
